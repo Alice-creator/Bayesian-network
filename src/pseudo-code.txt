@@ -39,7 +39,17 @@ STEP 2: CALCULATE DEPENDENCY PROBABILITY
 
 for item_utility in Utility.item_utilities:
 
+
+###NOTE
 P(ABC) = P(A) * P(B/A) * P(C/B) = RTWU(A) / D * RTWU(AB) / RTWU(A) * RTWU(CB) / RTWU(B) = RTWU(AB) * RTWU(CB) / [80 * RTWU(B)]
 = 11 * 44 / (80 * 44) = 11/80 = P(ABC)
 
 P(ED) != P(E) * P(D)
+
+RTWU(A) = 47
+RTWU(B) = 44
+RTWU(C) = 80
+RTWU(D) = 53
+RTWU(E) = 67
+RTWU(F) = 22
+RTWU(G) = 33
