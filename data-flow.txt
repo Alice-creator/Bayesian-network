@@ -1,0 +1,121 @@
+Database
+1. a: 0.1	b: 0.3		cd: 0.5
+2. a: 0.9	bc: 0.8 	de: 0.6
+3. ac: 0.7	be: 0.7		c: 0.9
+4. ab: 0.6	c: 0.4		d: 0.1		e: 0.5
+5. b:0.8	d: 0.3 		e: 0.2
+6. cd: 0.3	e: 0.5
+
+TOP_K = 5
+MIN_SUP = 0
+
+Step 1: create up-list for each item
+a sum = 1.0, max = 0.9
+T1. 0.1
+T2. 0.9
+
+b sum = 1.1, max = 0.8
+T1. 0.3
+T5. 0.8
+
+c sum = 1.3, max = 0.9
+T3. 0.9
+T4. 0.4
+
+d sum = 0.4, max = 0.3
+T4. 0.1
+T5. 0.3
+
+e sum = 1.2, max = 0.5
+T4. 0.5
+T5. 0.2
+T6. 0.5
+
+cd sum = 0.8, max = 0.8
+T1. 0.5
+T6. 0.3
+
+bc sum = 0.8, max = 0.8
+T2. 0.8
+
+de sum = 0.6, max = 0.6
+T2. 0.6
+
+ac sum = 0.7, max = 0.7
+T3. 0.7
+
+be sum = 0.7, max = 0.7
+T3. 0.7
+
+ab sum = 0.6, max = 0.6
+T4. 0.6
+
+######################################################################
+Step 2: Find top k depends on sum of item
+independence_list: c(1.3) -> e(1.2) -> b(1.1) -> a(1.0) -> d(0.4)
+dependence_list: cd(0.8) -> bc(0.8) -> ac(0.7) -> de(0.6) -> ab(0.6)
+
+######################################################################
+Step 3: Assign min sup with new value
+top_k_candidate = [(c, 1.3), (e, 1.2), (b, 1.1), (a, 1.0), (cd, 0.8)]
+
+
+MIN_SUP = item[k - 1].sum if top_k_candidate.length == k else 0
+MIN_SUP = item[k - 1].sum = 0.8
+
+######################################################################
+Step 4: Calculate support of dependencies
+for dependence in dependence_list:
+    item_1, item_2 <- item in dependence
+    (item_small, item_big) = (item_1, item_2) if (item_1.table.length < item_2.table.length) else (item_2, item_1)
+    max_sup = dependence.sum + item_small.sum *item_big.max
+    if max_sup > MIN_SUP:
+        re-calculate dependence: expand table, cal sum, max
+        update dependence in dependence_list and top_k_candidate
+        if dependence.sum > MIN_SUP:
+            update top_k_candidate and MIN_SUP
+
+-> list of initial top_k_candidate
+
+######################################################################
+Step 5: Find top_k
+
+top_k_candidate
+u = up-list of top_k_candidate
+def algo(u,top_k_candidate , TOP_K):
+    for item1 in u:
+        next_u = []
+        for item2 in u: | item2 after item1 (like j and i)
+            (item_small, item_big) = (item_1, item_2) if (item_1.table.length < item_2.table.length) else (item_2, item_1)
+            if item_small.sum *item_big.max > MIN_SUP:
+                create up_list of item1 and item 2 -> new_item:
+                if new_item.sum > MIN_SUP:
+                    next_u.append(new_item)
+                    update top_k_candidate and MIN_SUP
+        algo(next_u,top_k_candidate, TOP_K)
+
+-> final top_k
+########################################################################
+
+Create up_list from 2 up_lists:
+example item1 = abc and item2 = abd
+def create_up_list(u1: up_list, u2: up_list, u: up_list)
+    tail_item = u2.item - u1.item | in item2 not in item 1 -> d
+    tail = up_list of tail_item
+    transactions = u1.transactions.intersection(u2.transactions)
+    sum = 0
+    max = 0
+    table = []
+    for t in transactions:
+        p = u1.p_in_t * tail.p_in_t
+        tabe.append({t: p})
+        sum += p
+        max = max(max,p)
+    return up_list(sum,max,table)
+
+
+
+
+
+
+b -> a, c -> a
