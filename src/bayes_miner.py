@@ -10,7 +10,9 @@ class ItemUtility:
         self.length = 0
 
     def get_utility(self, transaction: str):
-        return self.utilities.get(transaction)
+        if self.utilities.get(transaction):
+            return self.utilities.get(transaction)
+        return 0
 
     def set_utility(self, transaction: str, utility: float):
         self.utilities[transaction] = utility
@@ -26,6 +28,12 @@ class ItemUtility:
     
     def __gt__(self, other: 'ItemUtility'):
         return self.sum > other.sum
+    
+    def __eq__(self, other):
+        return isinstance(other, ItemUtility) and self.ITEM == other.ITEM
+
+    def __hash__(self):
+        return hash(self.ITEM)
 
 class BayesianMiner:
     def __init__(self, database: list, top_k: int, min_sup: int = 0):
@@ -61,8 +69,9 @@ class BayesianMiner:
         return sorted(input_list, key=key_func, reverse=reverse)
     
     def __set_top_k(self, input_list: List[ItemUtility]):
-        sorted_list = self.__sort(input_list, key_func=lambda x: x.sum)
-        return sorted_list[:self.TOP_K]
+        clear_duplicate_sorted_list = self.__sort(self.__clear_duplicate(input_list), key_func=lambda x: x.sum)
+
+        return clear_duplicate_sorted_list[:self.TOP_K]
 
     def __set_top_k_candidates(self):
         self.top_k_candidates = self.__set_top_k(self.dependence_list + self.independence_list)
@@ -71,7 +80,7 @@ class BayesianMiner:
         self.min_sup = self.top_k_candidates[-1].sum
 
     def __extract_item_names(self, utility_item: ItemUtility):
-        return utility_item.ITEM.split("")
+        return list(utility_item.ITEM)
     
     def __get_item_utility(self, name: str):
         return self.utility_dicts.get(name)
@@ -88,22 +97,50 @@ class BayesianMiner:
             max_sup =  depend.sum + item_small.sum * item_big.max
 
             if max_sup > self.min_sup:
-                for transaction, utility in item_small.utilities:
+                for transaction, utility in item_small.utilities.items():
                     if transaction in item_big.utilities:
                         self.utility_dicts[depend.ITEM].set_utility(transaction, utility + item_big.get_utility(transaction))
                 self.dependence_list = self.__add_to_suitable_list(self.dependence_list, depend)
                 if depend.sum > self.min_sup:
                     self.__set_top_k_candidates()
                     self.__set_min_sup()
-                    
-    def __find_top_k_bayesian_networks(self):
-        return None
+    
+    def __find_top_k_bayesian_networks(self, item_utilities: List[ItemUtility]):
+        for index, current in enumerate(item_utilities):
+            next_item_utilities: List[ItemUtility] = list()
+            for next_current in item_utilities[index + 1:]:
+                item_small, item_big = self.__sort([current, next_current], key_func=lambda x: x.length, reverse=False)
+                max_sup = item_small.sum * item_big.max
+                if max_sup > self.min_sup:
+                    new_item = self.create_new_item_utility(item_small, item_big)
+                    if new_item is None:
+                        continue
+                    self.utility_dicts[new_item.ITEM] = new_item
+                    self.__add_to_suitable_list(self.dependence_list, new_item)
+                    if new_item.sum > self.min_sup:
+                        next_item_utilities.append(new_item)
+                        self.__set_top_k_candidates()
+                        self.__set_min_sup()
+            self.__find_top_k_bayesian_networks(next_item_utilities)
 
     def get_top_k_candidates(self):
         return self.top_k_candidates
 
     def create_new_item_utility(self, old_item_1: ItemUtility, old_item_2: ItemUtility):
-        return None
+        tail_item_name = ''.join([ch for ch in old_item_2.ITEM if ch not in old_item_1.ITEM])
+        reverse_tail_item_name = ''.join([ch for ch in old_item_1.ITEM if ch not in old_item_2.ITEM])
+        
+        if not tail_item_name or not reverse_tail_item_name:
+            return None
+
+        tail: ItemUtility = self.__get_item_utility(tail_item_name)
+        
+        new_item = ItemUtility(item=old_item_1.ITEM + tail_item_name)
+
+        for transaction, utility in old_item_1.utilities.items():
+            new_item.set_utility(transaction=transaction, utility=utility * tail.get_utility(transaction))
+        
+        return new_item
 
     def run(self):
         self.__create_utility_lists()
@@ -112,7 +149,7 @@ class BayesianMiner:
         self.__set_top_k_candidates()
         self.__set_min_sup()
         self.__calculate_support_of_depends(self.dependence_list)
-        # self.__find_top_k_bayesian_networks()
+        self.__find_top_k_bayesian_networks(self.top_k_candidates)
 
 
 DATABASE = [
@@ -123,7 +160,8 @@ DATABASE = [
     {'b': 0.8, 'd': 0.3, 'e': 0.2},
     {'cd': 0.3, 'e': 0.5}
 ]
-TOP_K = 5
+TOP_K = 25
 
 bayes_miner = BayesianMiner(DATABASE, TOP_K)
 bayes_miner.run()
+print(bayes_miner.get_top_k_candidates())
