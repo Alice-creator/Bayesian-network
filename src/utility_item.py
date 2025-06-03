@@ -1,22 +1,31 @@
+class UtilityTransaction:
+    def __init__(self, utility: int, probability: float, remaining_utility: int):
+        self.utility = utility
+        self.remaining_utility = remaining_utility
+        self.probability = probability
+    
+    def __str__(self):
+        return f"Utility: {self.utility}, Remaining utility: {self.remaining_utility}, Probability: {self.probability}\n"
+
+    def __repr__(self):
+        return self.__str__()
+
 class UtilityItem:
-    def __init__(self, item: str, sum_of_utility: float = 0, max_utility: float = 0):
+    def __init__(self, item: str):
         self.ITEM = item
-        self.sum = sum_of_utility
-        self.max = max_utility
-        self.utilities = dict()
-        self.is_depend = len(item) > 1
-        self.length = 0
+        self.sum = 0
+        self.max = 0
+        self.utilities: dict[UtilityTransaction] = dict()
 
     def get_utility(self, transaction: str):
         if self.utilities.get(transaction):
             return self.utilities.get(transaction)
         return 0
 
-    def set_utility(self, transaction: str, utility: float):
-        self.utilities[transaction] = utility
+    def set_utility(self, transaction: int, probability: float, utility: int, remaining_utility: int):
+        self.utilities[transaction] = UtilityTransaction(utility, probability, remaining_utility)
         self.max = max(self.max, utility)
         self.sum += utility
-        self.length += 1
 
     def __str__(self):
         return f"Item name: {self.ITEM}, sum: {self.sum}, max: {self.max}, utilities: {self.utilities}\n"

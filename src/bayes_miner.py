@@ -1,30 +1,16 @@
 from typing import List, Callable
 from utility_item import UtilityItem
-
+from helper import create_utility_dict
 
 class BayesianMiner:
-    def __init__(self, database: list, top_k: int, min_sup: int = 0):
-        self.DATABASE: List[dict] = database
+    def __init__(self, utility_dict: dict[UtilityItem], top_k: int, min_sup: int = 0):
         self.TOP_K: int = top_k
         self.min_sup: float = min_sup
         self.top_k_candidates: List[UtilityItem] = list()
-        self.utility_dicts: dict[str, UtilityItem] = dict()
+        self.utility_dicts: dict[str, UtilityItem] = utility_dict
         self.dependence_list: List[UtilityItem] = list()
         self.independence_list: List[UtilityItem] = list()
-
-    def __create_utility_lists(self):
-        for transaction_id, transaction in enumerate(self.DATABASE):
-            for item, utility in transaction.items():
-                if item not in self.utility_dicts:
-                    self.utility_dicts[item] = UtilityItem(item=item)
-                self.utility_dicts[item].set_utility(transaction_id, utility) 
-                
-                if self.utility_dicts[item].is_depend:
-                    self.dependence_list = self.__add_to_suitable_list(self.dependence_list, self.utility_dicts[item])
-                else: 
-                    self.independence_list = self.__add_to_suitable_list(self.independence_list, self.utility_dicts[item])
-
-
+        
     def __add_to_suitable_list(self, chosen_list: List[UtilityItem], item_utility: UtilityItem):
         chosen_list.append(item_utility)
         return self.__clear_duplicate(chosen_list)
@@ -110,7 +96,7 @@ class BayesianMiner:
         return new_item
 
     def run(self):
-        self.__create_utility_lists()
+        print(self.utility_dicts)
         self.dependence_list = self.__set_top_k(self.dependence_list)
         self.independence_list = self.__set_top_k(self.independence_list)
         self.__set_top_k_candidates()
@@ -120,15 +106,51 @@ class BayesianMiner:
 
 
 DATABASE = [
-    {'a': 0.1, 'b': 0.3, 'cd': 0.5},
-    {'a': 0.9, 'bc': 0.8, 'de': 0.6},
-    {'ac': 0.7, 'be': 0.7, 'd': 0.9},
-    {'ab': 0.6, 'c': 0.4, 'd': 0.1, 'e': 0.5},
-    {'b': 0.8, 'd': 0.3, 'e': 0.2},
-    {'cd': 0.3, 'e': 0.5}
+    {
+        "items": ["A", "B", "CD"],
+        "quantities": [2, 1, 3],
+        "profits": [6, 5, 9],
+        "probabilities": [0.8, 0.75, 0.6]
+    },
+    {
+        "items": ["A", "BC", "DE"],
+        "quantities": [1, 2, 3],
+        "profits": [5, 6, 7],
+        "probabilities": [0.85, 0.68, 0.63]
+    },
+    {
+        "items": ["AC", "BE"],
+        "quantities": [1, 2],
+        "profits": [4, 5],
+        "probabilities": [0.72, 0.66]
+    },
+    {
+        "items": ["AB", "C", "D", "E"],
+        "quantities": [2, 1, 2, 1],
+        "profits": [7, 3, 4, 2],
+        "probabilities": [0.78, 0.7, 0.6, 0.65]
+    },
+    {
+        "items": ["B", "C", "D", "E"],
+        "quantities": [2, 1, 2, 1],
+        "profits": [6, 3, 5, 4],
+        "probabilities": [0.75, 0.66, 0.59, 0.61]
+    },
+    {
+        "items": ["CD", "E"],
+        "quantities": [2, 1],
+        "profits": [6, 3],
+        "probabilities": [0.64, 0.67]
+    },
+    {
+        "items": ["A", "B", "C", "D", "E"],
+        "quantities": [2, 2, 1, 2, 1],
+        "profits": [6, 5, 4, 3, 2],
+        "probabilities": [0.85, 0.7, 0.65, 0.6, 0.68]
+    }
 ]
 TOP_K = 25
 
-bayes_miner = BayesianMiner(DATABASE, TOP_K)
+bayes_miner = BayesianMiner(create_utility_dict(DATABASE), TOP_K)
 bayes_miner.run()
 print(bayes_miner.get_top_k_candidates())
