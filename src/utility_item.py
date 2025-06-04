@@ -15,6 +15,7 @@ class UtilityItem:
         self.ITEM = item
         self.sum = 0
         self.max = 0
+        self.sum_prob = 0
         self.utilities: dict[UtilityTransaction] = dict()
 
     def get_utility(self, transaction: str):
@@ -26,9 +27,10 @@ class UtilityItem:
         self.utilities[transaction] = UtilityTransaction(utility, probability, remaining_utility)
         self.max = max(self.max, utility)
         self.sum += utility
+        self.sum_prob += probability
 
     def __str__(self):
-        return f"Item name: {self.ITEM}, sum: {self.sum}, max: {self.max}, utilities: {self.utilities}\n"
+        return f"Item name: {self.ITEM}, sum: {self.sum}, max: {self.max}, utilities: {self.utilities}, probability: {self.sum_prob}\n"
 
     def __repr__(self):
         return self.__str__()

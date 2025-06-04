@@ -6,11 +6,10 @@ class BayesianMiner:
     def __init__(self, utility_dict: dict[UtilityItem], top_k: int, min_sup: int = 0):
         self.TOP_K: int = top_k
         self.min_sup: float = min_sup
-        self.top_k_candidates: List[UtilityItem] = list()
+        self.min_utility = 0
         self.utility_dicts: dict[str, UtilityItem] = utility_dict
-        self.dependence_list: List[UtilityItem] = list()
-        self.independence_list: List[UtilityItem] = list()
-        
+        self.top_k_candidates: List[UtilityItem] = list()     
+
     def __add_to_suitable_list(self, chosen_list: List[UtilityItem], item_utility: UtilityItem):
         chosen_list.append(item_utility)
         return self.__clear_duplicate(chosen_list)
@@ -20,17 +19,12 @@ class BayesianMiner:
     
     def __sort(self, input_list: List[UtilityItem], key_func: Callable[[UtilityItem], float], reverse: bool = True):
         return sorted(input_list, key=key_func, reverse=reverse)
-    
-    def __set_top_k(self, input_list: List[UtilityItem]):
-        clear_duplicate_sorted_list = self.__sort(self.__clear_duplicate(input_list), key_func=lambda x: x.sum)
 
-        return clear_duplicate_sorted_list[:self.TOP_K]
-
-    def __set_top_k_candidates(self):
-        self.top_k_candidates = self.__set_top_k(self.dependence_list + self.independence_list)
+    def __get_top_k_candidates(self, utility_list: List[UtilityItem]):
+        return self.__sort(utility_list, key_func=lambda item: item.sum)[:self.TOP_K]
     
-    def __set_min_sup(self):
-        self.min_sup = self.top_k_candidates[-1].sum
+    def __set_min_utility(self):
+        self.min_utility = self.top_k_candidates[-1].sum
 
     def __extract_item_names(self, utility_item: UtilityItem):
         return list(utility_item.ITEM)
@@ -95,13 +89,20 @@ class BayesianMiner:
         
         return new_item
 
+    def __get_valid_min_support_candidates(self, utility_dict: dict[str, UtilityItem]):
+        return {
+            name: item
+            for name, item in utility_dict.items()
+            if item.sum_prob >= self.min_sup
+        }
+
     def run(self):
-        print(self.utility_dicts)
-        self.dependence_list = self.__set_top_k(self.dependence_list)
-        self.independence_list = self.__set_top_k(self.independence_list)
-        self.__set_top_k_candidates()
-        self.__set_min_sup()
-        self.__calculate_support_of_depends(self.dependence_list)
+        # Remove candidates where: candidate.prob < min support
+        self.utility_dicts = self.__get_valid_min_support_candidates(self.utility_dicts)
+        # Find first top k candidates to expand
+        self.top_k_candidates = self.__get_top_k_candidates(list(self.utility_dicts.values()))
+        # Set first min utility
+        self.__set_min_utility()
         self.__find_top_k_bayesian_networks(self.top_k_candidates)
 
 
@@ -149,8 +150,8 @@ DATABASE = [
         "probabilities": [0.85, 0.7, 0.65, 0.6, 0.68]
     }
 ]
-TOP_K = 25
+TOP_K = 5
 
-bayes_miner = BayesianMiner(create_utility_dict(DATABASE), TOP_K)
+bayes_miner = BayesianMiner(create_utility_dict(DATABASE), TOP_K, 0.5)
 bayes_miner.run()
 print(bayes_miner.get_top_k_candidates())
