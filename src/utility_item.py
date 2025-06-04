@@ -13,30 +13,42 @@ class UtilityTransaction:
 class UtilityItem:
     def __init__(self, item: str):
         self.ITEM = item
-        self.sum = 0
-        self.max = 0
+        self.sum_utility = 0
+        self.max_utility = 0
         self.sum_prob = 0
-        self.utilities: dict[UtilityTransaction] = dict()
+        self.sum_ru = 0
+        self.utilities: dict[int, UtilityTransaction] = dict()
 
-    def get_utility(self, transaction: str):
-        if self.utilities.get(transaction):
-            return self.utilities.get(transaction)
+    def get_probability(self, id: int):
+        if self.utilities.get(id):
+            return self.utilities.get(id).probability
         return 0
-
+    
+    def get_utility(self, id: int):
+        if self.utilities.get(id):
+            return self.utilities.get(id).utility
+        return 0
+    
+    def get_remaining(self, id: int):
+        if self.utilities.get(id):
+            return self.utilities.get(id).remaining_utility
+        return 0
+    
     def set_utility(self, transaction: int, probability: float, utility: int, remaining_utility: int):
         self.utilities[transaction] = UtilityTransaction(utility, probability, remaining_utility)
-        self.max = max(self.max, utility)
-        self.sum += utility
+        self.max_utility = max(self.max_utility, utility)
+        self.sum_utility += utility
+        self.sum_ru += remaining_utility
         self.sum_prob += probability
 
     def __str__(self):
-        return f"Item name: {self.ITEM}, sum: {self.sum}, max: {self.max}, utilities: {self.utilities}, probability: {self.sum_prob}\n"
+        return f"Item name: {self.ITEM}, sum: {self.sum_utility}, max: {self.max_utility}, utilities: {self.utilities}, probability: {self.sum_prob}\n"
 
     def __repr__(self):
         return self.__str__()
     
     def __gt__(self, other: 'UtilityItem'):
-        return self.sum > other.sum
+        return self.sum_utility > other.sum_utility
     
     def __eq__(self, other):
         return isinstance(other, UtilityItem) and self.ITEM == other.ITEM

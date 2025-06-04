@@ -10,70 +10,46 @@ class BayesianMiner:
         self.utility_dicts: dict[str, UtilityItem] = utility_dict
         self.top_k_candidates: List[UtilityItem] = list()     
 
-    def __add_to_suitable_list(self, chosen_list: List[UtilityItem], item_utility: UtilityItem):
-        chosen_list.append(item_utility)
-        return self.__clear_duplicate(chosen_list)
-
-    def __clear_duplicate(self, input_list: List[UtilityItem]):
-        return list(set(input_list))
-    
     def __sort(self, input_list: List[UtilityItem], key_func: Callable[[UtilityItem], float], reverse: bool = True):
         return sorted(input_list, key=key_func, reverse=reverse)
 
     def __get_top_k_candidates(self, utility_list: List[UtilityItem]):
-        return self.__sort(utility_list, key_func=lambda item: item.sum)[:self.TOP_K]
+        return self.__sort(utility_list, key_func=lambda item: item.sum_utility)[:self.TOP_K]
     
     def __set_min_utility(self):
-        self.min_utility = self.top_k_candidates[-1].sum
+        self.min_utility = self.top_k_candidates[-1].sum_utility
 
-    def __extract_item_names(self, utility_item: UtilityItem):
-        return list(utility_item.ITEM)
-    
     def __get_item_utility(self, name: str):
         return self.utility_dicts.get(name)
 
-    def __get_extracted_item_utilities(self, depend: UtilityItem):
-        item_names = self.__extract_item_names(depend)
-        return list(map(lambda x: self.__get_item_utility(x), item_names))
+    def __is_able_to_combine(self, item1: UtilityItem, item2: UtilityItem):
+        return not set(item1.utilities.keys()).isdisjoint(item2.utilities.keys())
 
-    def __calculate_support_of_depends(self, chosen_list: List[UtilityItem]):
-        for depend in chosen_list:
-            item_utilities = self.__get_extracted_item_utilities(depend)
-            sorted_item_utilities = self.__sort(item_utilities, key_func=lambda x: x.length, reverse=False)
-            item_small, item_big = sorted_item_utilities[:2]
-            max_sup =  depend.sum + item_small.sum * item_big.max
-
-            if max_sup > self.min_sup:
-                for transaction, utility in item_small.utilities.items():
-                    if transaction in item_big.utilities:
-                        self.utility_dicts[depend.ITEM].set_utility(transaction, utility + item_big.get_utility(transaction))
-                self.dependence_list = self.__add_to_suitable_list(self.dependence_list, depend)
-                if depend.sum > self.min_sup:
-                    self.__set_top_k_candidates()
-                    self.__set_min_sup()
     
     def __find_top_k_bayesian_networks(self, item_utilities: List[UtilityItem]):
         for index, current in enumerate(item_utilities):
-            next_item_utilities: List[UtilityItem] = list()
-            for next_current in item_utilities[index + 1:]:
-                item_small, item_big = self.__sort([current, next_current], key_func=lambda x: x.length, reverse=False)
-                max_sup = item_small.sum * item_big.max
-                if max_sup > self.min_sup:
-                    new_item = self.create_new_item_utility(item_small, item_big)
-                    if new_item is None:
-                        continue
-                    self.utility_dicts[new_item.ITEM] = new_item
-                    self.__add_to_suitable_list(self.dependence_list, new_item)
-                    if new_item.sum > self.min_sup:
-                        next_item_utilities.append(new_item)
-                        self.__set_top_k_candidates()
-                        self.__set_min_sup()
-            self.__find_top_k_bayesian_networks(next_item_utilities)
+            if current.sum_ru + current.sum_utility >= self.min_utility:
+                next_item_utilities: List[UtilityItem] = list()
+                for next_current in item_utilities[index + 1:]:
+                    if self.__is_able_to_combine(current, next_current):
+
+                        item_small, item_big = self.__sort([current, next_current], key_func=lambda x: len(x.utilities), reverse=False)
+                        new_item = self.__create_new_item_utility(item_small, item_big)
+
+                        if new_item != None and new_item.sum_prob > self.min_sup:
+                            if new_item is None:
+                                continue
+                            self.utility_dicts[new_item.ITEM] = new_item
+                            if new_item.sum_utility > self.min_utility:
+                                next_item_utilities.append(new_item)
+                                self.top_k_candidates = self.__get_top_k_candidates(list(self.utility_dicts.values()))
+                                self.__set_min_utility()
+                    self.__find_top_k_bayesian_networks(next_item_utilities)
 
     def get_top_k_candidates(self):
         return self.top_k_candidates
 
-    def create_new_item_utility(self, old_item_1: UtilityItem, old_item_2: UtilityItem):
+    def __create_new_item_utility(self, old_item_1: UtilityItem, old_item_2: UtilityItem):
         tail_item_name = ''.join([ch for ch in old_item_2.ITEM if ch not in old_item_1.ITEM])
         reverse_tail_item_name = ''.join([ch for ch in old_item_1.ITEM if ch not in old_item_2.ITEM])
         
@@ -84,9 +60,8 @@ class BayesianMiner:
         
         new_item = UtilityItem(item=old_item_1.ITEM + tail_item_name)
 
-        for transaction, utility in old_item_1.utilities.items():
-            new_item.set_utility(transaction=transaction, utility=utility * tail.get_utility(transaction))
-        
+        for id, transaction in old_item_1.utilities.items():
+            new_item.set_utility(transaction=id, probability=transaction.probability * tail.get_probability(id), utility=transaction.utility + tail.get_utility(id), remaining_utility=min(transaction.remaining_utility, tail.get_remaining(id)))  
         return new_item
 
     def __get_valid_min_support_candidates(self, utility_dict: dict[str, UtilityItem]):
@@ -103,30 +78,31 @@ class BayesianMiner:
         self.top_k_candidates = self.__get_top_k_candidates(list(self.utility_dicts.values()))
         # Set first min utility
         self.__set_min_utility()
+        # Mine top K candidates
         self.__find_top_k_bayesian_networks(self.top_k_candidates)
 
 
 DATABASE = [
     {
-        "items": ["A", "B", "CD"],
+        "items": ["A", "B", "(CD)"],
         "quantities": [2, 1, 3],
         "profits": [6, 5, 9],
         "probabilities": [0.8, 0.75, 0.6]
     },
     {
-        "items": ["A", "BC", "DE"],
+        "items": ["A", "BC", "(DE)"],
         "quantities": [1, 2, 3],
         "profits": [5, 6, 7],
         "probabilities": [0.85, 0.68, 0.63]
     },
     {
-        "items": ["AC", "BE"],
+        "items": ["(AC)", "(BE)"],
         "quantities": [1, 2],
         "profits": [4, 5],
         "probabilities": [0.72, 0.66]
     },
     {
-        "items": ["AB", "C", "D", "E"],
+        "items": ["(AB)", "C", "D", "E"],
         "quantities": [2, 1, 2, 1],
         "profits": [7, 3, 4, 2],
         "probabilities": [0.78, 0.7, 0.6, 0.65]
@@ -138,7 +114,7 @@ DATABASE = [
         "probabilities": [0.75, 0.66, 0.59, 0.61]
     },
     {
-        "items": ["CD", "E"],
+        "items": ["(CD)", "E"],
         "quantities": [2, 1],
         "profits": [6, 3],
         "probabilities": [0.64, 0.67]
@@ -150,7 +126,7 @@ DATABASE = [
         "probabilities": [0.85, 0.7, 0.65, 0.6, 0.68]
     }
 ]
-TOP_K = 5
+TOP_K = 15
 
 bayes_miner = BayesianMiner(create_utility_dict(DATABASE), TOP_K, 0.5)
 bayes_miner.run()
