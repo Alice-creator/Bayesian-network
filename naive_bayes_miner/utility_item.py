@@ -18,6 +18,12 @@ class UtilityItem:
         self.sum_utility = 0
         self.sum_prob = 0
         self.sum_ru = 0
+        self.min_iu = float('inf')
+        self.min_ru = float('inf')
+        self.min_prob = float('inf')
+        self.max_iu = float('-inf')
+        self.max_ru = float('-inf')
+        self.max_prob = float('-inf')
         self.utilities: dict[int, UtilityTransaction] = dict()
 
     def get_probability(self, id: int):
@@ -41,6 +47,12 @@ class UtilityItem:
             self.sum_utility += utility
             self.sum_ru += remaining_utility
             self.sum_prob += probability
+            self.min_iu = min(self.min_iu, utility)
+            self.min_ru = min(self.min_ru, remaining_utility)
+            self.min_prob = min(self.min_prob, probability)
+            self.max_iu = max(self.max_iu, utility)
+            self.max_ru = max(self.max_ru, remaining_utility)
+            self.max_prob = max(self.max_prob, probability)
 
     def __str__(self):
         return f"Item name: {self.ITEM}, sum: {self.sum_utility}, probability: {self.sum_prob}, utilities: {self.utilities}\n"

@@ -86,9 +86,13 @@ class BayesianMiner:
             tail: UtilityItem = self.__get_item_utility(tail_item_name)
         
         new_item = UtilityItem(item=old_item_1.ITEM + tail_item_name)
+        len_item_1 = len(old_item_1.utilities)
+        max_prob_tail = tail.max_prob
 
-        for id, transaction in old_item_1.utilities.items():
+        for idx, (id, transaction) in enumerate(old_item_1.utilities.items()):
             new_item.set_utility(transaction=id, probability=transaction.probability * tail.get_probability(id), utility=transaction.utility + tail.get_utility(id), remaining_utility=min(transaction.remaining_utility, tail.get_remaining(id)))
+            if self.min_sup - new_item.sum_prob > (len_item_1 - idx)*max_prob_tail:
+                return new_item
         return new_item
 
     def __get_valid_min_support_candidates(self, utility_dict: dict[str, UtilityItem]):
