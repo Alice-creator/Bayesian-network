@@ -73,7 +73,7 @@ for dependence in dependence_list:
         re-calculate dependence: expand table, cal sum, max
         update dependence in dependence_list and top_k_candidate
         if dependence.sum > MIN_SUP:
-            update top_k_candidate and MIN_SUP
+            update top_k_candidate and MIN_SUP 
 
 -> list of initial top_k_candidate
 
@@ -113,6 +113,10 @@ def create_up_list(u1: up_list, u2: up_list, u: up_list)
         max = max(max,p)
     return up_list(sum,max,table)
 
+create_up_list(abc, abd)
+tail_item = abd - abc = d
+transactions = [T1, T2, ...]
+p = (utility_of_u1 * utility_of_tail) in the same transaction
 
 
 
