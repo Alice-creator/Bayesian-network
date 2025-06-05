@@ -32,22 +32,43 @@ class BayesianMiner:
     
     def __find_top_k_bayesian_networks(self, item_utilities: List[UtilityItem]):
         for index, current in enumerate(item_utilities):
-            if current.sum_ru + current.sum_utility >= self.min_utility:
-                next_item_utilities: List[UtilityItem] = list()
-                for next_current in item_utilities[index + 1:]:
-                    if self.__is_able_to_combine(current, next_current):
+            if not self.__is_promising(current):
+                continue
 
-                        item_small, item_big = self.__sort([current, next_current], key_func=lambda x: len(x.utilities), reverse=False)
-                        new_item = self.__create_new_item_utility(item_small, item_big)
-                        if new_item != None and new_item.sum_prob > self.min_sup:
-                            if new_item is None:
-                                continue
-                            next_item_utilities.append(new_item)
-                            self.utility_dicts[new_item.ITEM] = new_item
-                            if new_item.sum_utility > self.min_utility:
-                                self.top_k_candidates = self.__get_top_k_candidates(list(self.utility_dicts.values()))
-                                self.__set_min_utility()
-                    self.__find_top_k_bayesian_networks(next_item_utilities)
+            next_item_utilities = []
+
+            for next_current in item_utilities[index + 1:]:
+                if not self.__is_able_to_combine(current, next_current):
+                    continue
+
+                new_item = self.__try_combine(current, next_current)
+                if new_item is None:
+                    continue
+
+                next_item_utilities.append(new_item)
+                self.__process_new_item(new_item)
+
+            self.__find_top_k_bayesian_networks(next_item_utilities)
+
+    # --- Helper methods ---
+
+    def __is_promising(self, item: UtilityItem) -> bool:
+        return item.sum_utility + item.sum_ru >= self.min_utility
+
+    def __try_combine(self, item1: UtilityItem, item2: UtilityItem):
+        item_small, item_big = self.__sort([item1, item2], key_func=lambda x: len(x.utilities), reverse=False)
+        new_item = self.__create_new_item_utility(item_small, item_big)
+        if new_item and new_item.sum_prob > self.min_sup:
+            return new_item
+        return None
+
+    def __process_new_item(self, item: UtilityItem):
+        self.utility_dicts[item.ITEM] = item
+        if item.sum_utility > self.min_utility:
+            self.top_k_candidates.append(item)
+            self.top_k_candidates = self.__get_top_k_candidates(self.top_k_candidates)
+            self.__set_min_utility()
+
 
     def get_top_k_candidates(self):
         return self.top_k_candidates
