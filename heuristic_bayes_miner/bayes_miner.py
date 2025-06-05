@@ -52,8 +52,7 @@ class BayesianMiner:
 
                 next_item_utilities.append(new_item)
                 self.__process_new_item(new_item)
-
-            self.__find_top_k_bayesian_networks(sorted(next_item_utilities, key=lambda item: self.__calculate_heuristic(item)))
+            self.__find_top_k_bayesian_networks(sorted(next_item_utilities, key=lambda item: self.__calculate_heuristic(item), reverse=True))
 
     # --- Helper methods ---
 
@@ -109,7 +108,8 @@ class BayesianMiner:
         # Find expandable itemset to expand, first top k candidate to return
         self.exandable_itemset = sorted(
             self.__get_expandable(list(self.utility_dicts.values()), self.min_utility),
-            key=lambda item: self.__calculate_heuristic(item)
+            key=lambda item: self.__calculate_heuristic(item), 
+            reverse=True
         )
         self.top_k_candidates = self.__get_top_k_candidates(list(self.utility_dicts.values()))
         # Set first min utility
@@ -162,7 +162,7 @@ DATABASE = [
         "probabilities": [0.85, 0.7, 0.65, 0.6, 0.68]
     }
 ]
-TOP_K = 5
+TOP_K = 10
 
 bayes_miner = BayesianMiner(utility_dict=create_utility_dict(DATABASE), top_k=TOP_K, min_sup=0.5, transactions=get_number_of_transaction(DATABASE), database_utility=get_sum_utility_of_database(DATABASE))
 bayes_miner.run()
