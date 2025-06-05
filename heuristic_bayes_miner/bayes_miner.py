@@ -1,10 +1,12 @@
 from typing import List, Callable
 from utility_item import UtilityItem
-from helper import create_utility_dict
+from helper import create_utility_dict, get_number_of_transaction, get_sum_utility_of_database
 
 class BayesianMiner:
-    def __init__(self, utility_dict: dict[UtilityItem], top_k: int, min_sup: int = 0):
+    def __init__(self, utility_dict: dict[UtilityItem], top_k: int, transactions: int, database_utility: int, min_sup: int = 0):
         self.TOP_K: int = top_k
+        self.transactions: int = transactions
+        self.database_utility = database_utility
         self.min_sup: float = min_sup
         self.min_utility = 0
         self.utility_dicts: dict[str, UtilityItem] = utility_dict
@@ -28,6 +30,9 @@ class BayesianMiner:
 
     def __is_able_to_combine(self, item1: UtilityItem, item2: UtilityItem):
         return not set(item1.utilities.keys()).isdisjoint(item2.utilities.keys())
+    
+    def __calculate_heuristic(self, item: UtilityItem):
+        return (item.sum_utility + item.sum_ru) / self.database_utility + item.existance / self.transactions
 
     
     def __find_top_k_bayesian_networks(self, item_utilities: List[UtilityItem]):
@@ -48,7 +53,7 @@ class BayesianMiner:
                 next_item_utilities.append(new_item)
                 self.__process_new_item(new_item)
 
-            self.__find_top_k_bayesian_networks(next_item_utilities)
+            self.__find_top_k_bayesian_networks(sorted(next_item_utilities, key=lambda item: self.__calculate_heuristic(item)))
 
     # --- Helper methods ---
 
@@ -102,7 +107,10 @@ class BayesianMiner:
         # Remove candidates where: candidate.prob < min support
         self.utility_dicts = self.__get_valid_min_support_candidates(self.utility_dicts)
         # Find expandable itemset to expand, first top k candidate to return
-        self.exandable_itemset = self.__get_expandable(list(self.utility_dicts.values()), self.min_utility)
+        self.exandable_itemset = sorted(
+            self.__get_expandable(list(self.utility_dicts.values()), self.min_utility),
+            key=lambda item: self.__calculate_heuristic(item)
+        )
         self.top_k_candidates = self.__get_top_k_candidates(list(self.utility_dicts.values()))
         # Set first min utility
         self.__set_min_utility()
@@ -156,6 +164,6 @@ DATABASE = [
 ]
 TOP_K = 5
 
-bayes_miner = BayesianMiner(create_utility_dict(DATABASE), TOP_K, 0.5)
+bayes_miner = BayesianMiner(utility_dict=create_utility_dict(DATABASE), top_k=TOP_K, min_sup=0.5, transactions=get_number_of_transaction(DATABASE), database_utility=get_sum_utility_of_database(DATABASE))
 bayes_miner.run()
 print(bayes_miner.get_top_k_candidates())

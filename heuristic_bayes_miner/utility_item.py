@@ -18,6 +18,7 @@ class UtilityItem:
         self.sum_utility = 0
         self.sum_prob = 0
         self.sum_ru = 0
+        self.existance = 0
         self.utilities: dict[int, UtilityTransaction] = dict()
 
     def get_probability(self, id: int):
@@ -41,6 +42,7 @@ class UtilityItem:
             self.sum_utility += utility
             self.sum_ru += remaining_utility
             self.sum_prob += probability
+            self.existance += 1
 
     def __str__(self):
         return f"Item name: {self.ITEM}, sum: {self.sum_utility}, probability: {self.sum_prob}, utilities: {self.utilities}\n"
