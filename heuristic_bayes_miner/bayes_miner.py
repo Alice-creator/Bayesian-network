@@ -11,7 +11,7 @@ class BayesianMiner:
         self.min_utility = 0
         self.utility_dicts: dict[str, UtilityItem] = utility_dict
         self.top_k_candidates: List[UtilityItem] = list()
-        self.exandable_itemset: List[UtilityItem] = list() 
+        self.expandable_itemset: List[UtilityItem] = list() 
 
     def __sort(self, input_list: List[UtilityItem], key_func: Callable[[UtilityItem], float], reverse: bool = True):
         return sorted(input_list, key=key_func, reverse=reverse)
@@ -106,7 +106,7 @@ class BayesianMiner:
         # Remove candidates where: candidate.prob < min support
         self.utility_dicts = self.__get_valid_min_support_candidates(self.utility_dicts)
         # Find expandable itemset to expand, first top k candidate to return
-        self.exandable_itemset = sorted(
+        self.expandable_itemset = sorted(
             self.__get_expandable(list(self.utility_dicts.values()), self.min_utility),
             key=lambda item: self.__calculate_heuristic(item), 
             reverse=True
@@ -115,7 +115,7 @@ class BayesianMiner:
         # Set first min utility
         self.__set_min_utility()
         # Mine top K candidates
-        self.__find_top_k_bayesian_networks(self.exandable_itemset)
+        self.__find_top_k_bayesian_networks(self.expandable_itemset)
 
 
 DATABASE = [
