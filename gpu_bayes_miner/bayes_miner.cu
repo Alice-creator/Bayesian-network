@@ -13,11 +13,13 @@ struct BayesianMiner {
     const int NUMBER_OF_TRANSACTIONS;
     const int DATABASE_UTILITY;
     const double MIN_SUPPORT;
-    int min_utility = 0;
     unordered_map<string, UtilityItem> utility_map;
+    int min_utility = 0;
 
-    BayesianMiner(int k, int num_tx, int db_util, double min_sup)
-        : TOP_K(k), NUMBER_OF_TRANSACTIONS(num_tx), DATABASE_UTILITY(db_util), MIN_SUPPORT(min_sup) {}
+    BayesianMiner(int k, int num_tx, int db_util, double min_sup,
+                  unordered_map<string, UtilityItem> utility_map)
+        : TOP_K(k), NUMBER_OF_TRANSACTIONS(num_tx), DATABASE_UTILITY(db_util),
+          MIN_SUPPORT(min_sup), utility_map(std::move(utility_map)) {}
 };
 
 
@@ -69,6 +71,6 @@ int main(){
     };
     const int TOP_K = 10;
     const double MIN_SUPPORT = 0.5;
-    BayesianMiner bayesian_miner(TOP_K, get_number_of_transaction(DATABASE), get_sumutility_of_database(DATABASE), MIN_SUPPORT);
+    BayesianMiner bayesian_miner(TOP_K, get_number_of_transaction(DATABASE), get_sum_utility_of_database(DATABASE), MIN_SUPPORT, create_utility_mapper(DATABASE));
     return 0;
 }

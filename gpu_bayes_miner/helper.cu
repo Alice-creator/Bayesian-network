@@ -39,7 +39,7 @@ int get_number_of_transaction(std::vector<Transaction> database) {
     return static_cast<int>(database.size());
 }
 
-int get_sumutility_of_database(std::vector<Transaction> database) {
+int get_sum_utility_of_database(std::vector<Transaction> database) {
     int total_utility = 0;
     for (const auto& transaction : database) {
         for (size_t i = 0; i < transaction.profits.size(); ++i) {

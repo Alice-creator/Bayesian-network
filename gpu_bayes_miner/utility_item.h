@@ -26,6 +26,8 @@ struct UtilityItem {
     int existance = 0;
     std::unordered_map<int, UtilityTransaction> utilities;
 
+    UtilityItem(const std::string& item_name) : item(item_name) {}
+
     void set_utility(int transaction_id, double probability, int utility, int remaining_utility) {
         UtilityTransaction utx;
         utx.utility = utility;
