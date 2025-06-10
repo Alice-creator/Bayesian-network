@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
 #include <unordered_map>
 
 struct Transaction {
@@ -39,6 +40,13 @@ struct UtilityItem {
         this->existance += 1;
     }
 
+    void print() const {
+    std::cout << "ITEM: " << item << "\n"
+              << "  sum_utility: " << sum_utility << "\n"
+              << "  sum_remaining_utility: " << sum_remaining_utility << "\n"
+              << "  sum_support: " << sum_support << "\n"
+              << "  existance: " << existance << "\n";
+    }
 };
 
 #endif

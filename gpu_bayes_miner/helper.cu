@@ -1,6 +1,7 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
+#include "helper.h"
 #include "utility_item.h"
 
 std::unordered_map<std::string, UtilityItem> create_utility_mapper(const std::vector<Transaction>& database) {
