@@ -13,7 +13,7 @@ class UtilityTransaction:
         return self.__str__()
 
 class UtilityItem:
-    def __init__(self, item: str):
+    def __init__(self, item: tuple[str]):
         self.ITEM = item
         self.sum_utility = 0
         self.sum_prob = 0
