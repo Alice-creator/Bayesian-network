@@ -21,6 +21,7 @@ struct UtilityTransaction {
 
 struct UtilityItem {
     std::string item;
+    std::string prefix;
     int sum_utility = 0;
     double sum_support = 0;
     int sum_remaining_utility = 0;
@@ -45,7 +46,8 @@ struct UtilityItem {
               << "  sum_utility: " << sum_utility << "\n"
               << "  sum_remaining_utility: " << sum_remaining_utility << "\n"
               << "  sum_support: " << sum_support << "\n"
-              << "  existance: " << existance << "\n";
+              << "  existance: " << existance << "\n"
+              << "  prefix: " << prefix << "\n";
     }
 };
 

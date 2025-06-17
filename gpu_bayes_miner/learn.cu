@@ -1,9 +1,11 @@
 #include <iostream>
 #include <cuda_runtime.h>
 using namespace std;
+#include <stdio.h>
 
 __global__ void increment_gpu(long long int *array, long long int N) {
     long long int i = threadIdx.x + blockIdx.x * blockDim.x;
+    printf("here is %lld\n", N);
     if (i < N) {
         array[i]++;
     }
@@ -27,11 +29,6 @@ int main() {
     cudaDeviceSynchronize();
 
     cudaMemcpy(host_array, device_array, N * sizeof(long long int), cudaMemcpyDeviceToHost);
-
-    for (int i = 0; i < 10; ++i) {  // Print first 10 for readability
-        cout << host_array[i] << " ";
-    }
-    cout << endl;
 
     cudaFree(device_array);
     delete[] host_array;

@@ -25,7 +25,7 @@ std::unordered_map<std::string, UtilityItem> create_utility_mapper(const std::ve
             remaining_utility -= item_utility;
 
             if (utilities.find(item) == utilities.end()) {
-                utilities[item] = UtilityItem{item};  // requires constructor
+                utilities[item] = UtilityItem{item, ""};  // requires constructor
             }
 
             utilities[item].set_utility(tid, probabilities[i], item_utility, remaining_utility);

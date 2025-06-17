@@ -9,6 +9,29 @@
 
 using namespace std;
 
+__device__ bool is_same_prefix(UtilityItem itemset_1, UtilityItem itemset_2){
+    return itemset_1.prefix == itemset_2.prefix;
+}
+
+__device__ UtilityItem create_new_item_utility(UtilityItem old_itemset_1, UtilityItem old_itemset_2){
+    return old_itemset_1;
+}
+
+__global__ void generate_pairs(vector<UtilityItem>* expandable_itemset, vector<UtilityItem> new_expandable_itemset) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    for (int i = idx + 1; i < expandable_itemset->size(); i++) {
+        if((*expandable_itemset)[i] == '\0') continue;
+        else if (is_same_prefix((*expandable_itemset)[i], (*expandable_itemset)[idx]))
+        {
+            UtilityItem old_itemset_1 = (*expandable_itemset)[idx];
+            UtilityItem old_itemset_2 = (*expandable_itemset)[i];
+            UtilityItem new_item_utility = create_new_item_utility(old_itemset_1, old_itemset_2);
+            new_expandable_itemset.push_back(new_item_utility);
+        }
+        
+    }
+}
+
 struct BayesianMiner {
     const int TOP_K;
     const int NUMBER_OF_TRANSACTIONS;
@@ -128,22 +151,22 @@ int main(){
     BayesianMiner bayesian_miner(TOP_K, get_number_of_transaction(DATABASE), get_sumutility_of_database(DATABASE), MIN_SUPPORT);
     bayesian_miner.utility_map = create_utility_mapper(DATABASE);
     bayesian_miner.run();
-    // unordered_map<string, UtilityItem> util_map = bayesian_miner.get_utility_map();
-    // for (const auto& pair : util_map) {
-    //     std::cout << "Key: " << pair.first << std::endl;
-    //     pair.second.print();
-    //     std::cout << "------------------------" << std::endl;
+    unordered_map<string, UtilityItem> util_map = bayesian_miner.get_utility_map();
+    for (const auto& pair : util_map) {
+        std::cout << "Key: " << pair.first << std::endl;
+        pair.second.print();
+        std::cout << "------------------------" << std::endl;
+    }
+    // std::cout << "\nTop-K Candidates:\n";
+    // for (const auto& item : bayesian_miner.candidates) {
+    //     item.print();
+    //     std::cout << "------------------------\n";
     // }
-    std::cout << "\nTop-K Candidates:\n";
-    for (const auto& item : bayesian_miner.candidates) {
-        item.print();
-        std::cout << "------------------------\n";
-    }
 
-    std::cout << "\nExpandable Itemsets:\n";
-    for (const auto& item : bayesian_miner.expandable_itemsets) {
-        item.print();
-        std::cout << "------------------------\n";
-    }
+    // std::cout << "\nExpandable Itemsets:\n";
+    // for (const auto& item : bayesian_miner.expandable_itemsets) {
+    //     item.print();
+    //     std::cout << "------------------------\n";
+    // }
     return 0;
 }
