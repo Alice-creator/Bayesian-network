@@ -12,12 +12,13 @@ def create_utility_dict(database: list, support_probability: float = 0, support_
         remaining_utility = 0
 
         for index in range(len(items) - 1, -1, -1):
-            is_supported = 1 if len(items[index]) > 1 else 0
+            is_supported = 1 if '(' in items[index] else 0
             item_name = tuple([items[index]])
             if item_name not in utilities:
                 utilities[item_name] = UtilityItem(item=item_name)
             item_utility = quantities[index] * profits[index] * (is_supported * support_utility + 1)
-            utilities[item_name].set_utility(transaction_id, probabilities[index] + support_probability * is_supported, item_utility, remaining_utility)
+            item_probability = probabilities[index] * (support_probability * is_supported + 1)
+            utilities[item_name].set_utility(transaction_id, item_probability, item_utility, remaining_utility)
             remaining_utility += item_utility
             
     return utilities
