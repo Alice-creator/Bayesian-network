@@ -19,6 +19,7 @@ class UtilityItem:
         self.sum_prob = 0
         self.sum_ru = 0
         self.existance = 0
+        self.max_prob = 0
         self.utilities: dict[int, UtilityTransaction] = dict()
 
     def get_probability(self, id: int):
@@ -42,6 +43,7 @@ class UtilityItem:
             self.sum_utility += utility
             self.sum_ru += remaining_utility
             self.sum_prob += probability
+            self.max_prob = max(self.max_prob, probability)
             self.existance += 1
 
     def __str__(self):

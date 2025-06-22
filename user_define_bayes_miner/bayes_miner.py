@@ -3,9 +3,6 @@ from utility_item import UtilityItem
 from helper import create_utility_dict, get_number_of_transaction, get_sum_utility_of_database
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from data.data_reader import read_merged_data
 
 class BayesianMiner:
     def __init__(self, utility_dict: dict[UtilityItem], top_k: int, transactions: int, database_utility: int, min_sup: int = 0):
@@ -83,19 +80,21 @@ class BayesianMiner:
         return self.top_k_candidates
 
     def __create_new_item_utility(self, old_item_1: UtilityItem, old_item_2: UtilityItem):
-        print(old_item_1.ITEM, old_item_2.ITEM)
-        tail_item = tuple([item for item in old_item_2.ITEM if item not in old_item_1.ITEM])
-        reverse_tail_item = tuple([item for item in old_item_1.ITEM if item not in old_item_2.ITEM])
-        
-        if not tail_item or not reverse_tail_item:
+        item1_set = set(old_item_1.ITEM)
+        tail_item = tuple(item for item in old_item_2.ITEM if item not in item1_set)
+        if not tail_item:
             return None
 
         tail: UtilityItem = self.__get_item_utility(tail_item)
         
         new_item = UtilityItem(item=tuple(old_item_1.ITEM + tail.ITEM))
 
+        current_sum_prob_old_item_1 = 0
         for id, transaction in old_item_1.utilities.items():
             new_item.set_utility(transaction=id, probability=transaction.probability * tail.get_probability(id), utility=transaction.utility + tail.get_utility(id), remaining_utility=min(transaction.remaining_utility, tail.get_remaining(id)))
+            current_sum_prob_old_item_1 += transaction.probability
+            if self.min_sup - new_item.sum_prob > (old_item_1.sum_prob - current_sum_prob_old_item_1) * tail.max_prob:
+                return None
         return new_item
 
     def __get_valid_min_support_candidates(self, utility_dict: dict[str, UtilityItem]):
@@ -111,7 +110,7 @@ class BayesianMiner:
         # Find expandable itemset to expand, first top k candidate to return
         self.expandable_itemset = sorted(
             self.__get_expandable(list(self.utility_dicts.values()), self.min_utility),
-            key=lambda item: self.__calculate_heuristic(item), 
+            key=lambda item: self.__calculate_heuristic(item),
             reverse=True
         )
         self.top_k_candidates = self.__get_top_k_candidates(list(self.utility_dicts.values()))
@@ -119,7 +118,6 @@ class BayesianMiner:
         self.__set_min_utility()
         # Mine top K candidates
         self.__find_top_k_bayesian_networks(self.expandable_itemset)
-
 
 DATABASE = [
     {
@@ -167,9 +165,10 @@ DATABASE = [
 ]
 
 TOP_K = 10
+SUPPORT_PROBABILITY = 0
+SUPPORT_UTILITY = 0
 
-data = read_merged_data("/home/loc-dang/Projects/bayesian-network/data/merged_prob_accidents_utility_spmf.txt")
-
-bayes_miner = BayesianMiner(utility_dict=create_utility_dict(data), top_k=TOP_K, min_sup=0.5, transactions=get_number_of_transaction(DATABASE), database_utility=get_sum_utility_of_database(DATABASE))
+bayes_miner = BayesianMiner(utility_dict=create_utility_dict(DATABASE, SUPPORT_PROBABILITY, SUPPORT_UTILITY), top_k=TOP_K, min_sup=0.5, transactions=get_number_of_transaction(DATABASE), database_utility=get_sum_utility_of_database(DATABASE))
+# print(bayes_miner.utility_dicts)
 bayes_miner.run()
 print(bayes_miner.get_top_k_candidates())

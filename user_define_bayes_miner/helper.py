@@ -1,6 +1,6 @@
 from utility_item import UtilityItem
 
-def create_utility_dict(database: list):
+def create_utility_dict(database: list, support_probability: float = 0, support_utility: float = 0):
     utilities: dict[tuple[str], UtilityItem] = dict()
 
     for transaction_id, transaction in enumerate(database):
@@ -9,15 +9,16 @@ def create_utility_dict(database: list):
         probabilities: list = transaction.get("probabilities")
         profits: list = transaction.get("profits")
 
-        remaining_utility = sum(q * p for q, p in zip(quantities, profits))
+        remaining_utility = 0
 
-        for index in range(len(items)):
+        for index in range(len(items) - 1, -1, -1):
+            is_supported = 1 if len(items[index]) > 1 else 0
             item_name = tuple([items[index]])
             if item_name not in utilities:
                 utilities[item_name] = UtilityItem(item=item_name)
-            item_utility = quantities[index] * profits[index]
-            remaining_utility -= item_utility
-            utilities[item_name].set_utility(transaction_id, probabilities[index], item_utility, remaining_utility)
+            item_utility = quantities[index] * profits[index] * (is_supported * support_utility + 1)
+            utilities[item_name].set_utility(transaction_id, probabilities[index] + support_probability * is_supported, item_utility, remaining_utility)
+            remaining_utility += item_utility
             
     return utilities
 
