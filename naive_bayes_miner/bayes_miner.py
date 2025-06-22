@@ -7,7 +7,7 @@ class BayesianMiner:
         self.TOP_K: int = top_k
         self.min_sup: float = min_sup
         self.min_utility = 0
-        self.utility_dicts: dict[str, UtilityItem] = utility_dict
+        self.utility_dicts: dict[tuple[str], UtilityItem] = utility_dict
         self.top_k_candidates: List[UtilityItem] = list()
         self.exandable_itemset: List[UtilityItem] = list() 
 
@@ -23,7 +23,7 @@ class BayesianMiner:
     def __set_min_utility(self):
         self.min_utility = self.top_k_candidates[-1].sum_utility
 
-    def __get_item_utility(self, name: str):
+    def __get_item_utility(self, name: tuple[str]):
         return self.utility_dicts.get(name)
 
     def __is_able_to_combine(self, item1: UtilityItem, item2: UtilityItem):
@@ -74,18 +74,13 @@ class BayesianMiner:
         return self.top_k_candidates
 
     def __create_new_item_utility(self, old_item_1: UtilityItem, old_item_2: UtilityItem):
-        tail_item_name = ''.join([ch for ch in old_item_2.ITEM if ch not in old_item_1.ITEM])
-        reverse_tail_item_name = ''.join([ch for ch in old_item_1.ITEM if ch not in old_item_2.ITEM])
-        
-        if not tail_item_name or not reverse_tail_item_name:
+        item1_set = set(old_item_1.ITEM)
+        tail_item = tuple(item for item in old_item_2.ITEM if item not in item1_set)
+        if not tail_item:
             return None
 
-        tail: UtilityItem = self.__get_item_utility(tail_item_name)
-        if not tail:
-            tail_item_name = f'({tail_item_name})'
-            tail: UtilityItem = self.__get_item_utility(tail_item_name)
-        
-        new_item = UtilityItem(item=old_item_1.ITEM + tail_item_name)
+        tail: UtilityItem = self.__get_item_utility(tail_item)
+        new_item = UtilityItem(item=tuple(old_item_1.ITEM + tail.ITEM))
 
         for id, transaction in old_item_1.utilities.items():
             new_item.set_utility(transaction=id, probability=transaction.probability * tail.get_probability(id), utility=transaction.utility + tail.get_utility(id), remaining_utility=min(transaction.remaining_utility, tail.get_remaining(id)))
@@ -154,7 +149,7 @@ DATABASE = [
         "probabilities": [0.85, 0.7, 0.65, 0.6, 0.68]
     }
 ]
-TOP_K = 5
+TOP_K = 10
 
 bayes_miner = BayesianMiner(create_utility_dict(DATABASE), TOP_K, 0.5)
 bayes_miner.run()
